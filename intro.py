@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 
 # Load your trained CNN model
-model = tf.keras.models.load_model('model.hdf5 ')
+model = tf.keras.models.load_model('model.hdf5')
 
 # Function to preprocess the image
 def preprocess_image(image):

@@ -1,43 +1,40 @@
 import streamlit as st
-from PIL import Image
-import tensorflow as tf
+import cv2
 import numpy as np
+from tensorflow.keras.models import load_model  # Assuming TensorFlow backend
 
-# Load your trained CNN model
-model = tf.keras.models.load_model('model.hdf5')
+# Load your pre-trained CNN model
+model = load_model('model.h5')  # Replace with your model filename
 
-# Function to preprocess the image
 def preprocess_image(image):
-img = Image.open(image)
-img = img.resize((50, 50)) # Assuming your model expects input size (224, 224)
-img_array = np.array(img) /50.0 # Normalize pixel values
-return img_array.reshape((1, 50, 50, 3)) # Reshape and return
+    """Preprocesses an X-ray image for CNN input."""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    resized = cv2.resize(gray, (50, 50))
+    normalized = resized.astype(np.float32) / 255.0
+    return np.expand_dims(normalized, axis=0)  # Add a batch dimension
 
-# Function to make predictions
 def predict(image):
-processed_image = preprocess_image(image)
-prediction = model.predict(processed_image)
-return prediction
+    """Predicts the presence of COVID-19 in an X-ray image."""
+    preprocessed_image = preprocess_image(image)
+    prediction = model.predict(preprocessed_image)
+    class_index = np.argmax(prediction)  # Get the index of the predicted class
+    class_names = ['Negative', 'COVID-19']  # Replace with your class names
+    return class_names[class_index]
 
-# Streamlit app
-def main():
-    st.title('COVID-19 Detection from Chest X-rays')
-    st.write('Upload a chest X-ray image and click on "Predict"')
+# Streamlit app setup
+st.title('COVID-19 Detection from X-ray Images')
+st.write('Upload an X-ray image to check for potential COVID-19 presence.')
+uploaded_file = st.file_uploader("Choose an X-ray image:", type="jpg,png")
 
-    uploaded_file = st.file_uploader("Choose an image...", type=['jpg', 'png'])
+if uploaded_file is not None:
+    image = cv2.imdecode(np.frombuffer(uploaded_file.read(), np.uint8), cv2.IMREAD_COLOR)
+    st.image(image, channels='BGR')
 
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        st.image(image, caption='Uploaded Image', use_column_width=True)
-        st.write("")
-        st.write("Classifying...")
+    if st.button('Predict'):
+        prediction = predict(image)
+        st.write(f'Prediction: {prediction}')
 
-        prediction = predict(uploaded_file)
-
-        if prediction[0][0] > 0.5:
-            st.write('Prediction: COVID-19 Positive')
+        if prediction == 'COVID-19':
+            st.warning('This is a suggestion only. Consult a medical professional for diagnosis.')
         else:
-            st.write('Prediction: COVID-19 Negative')
-
-if __name__ == '__main__':
-    main()
+            st.success('The X-ray appears negative for COVID-19.')

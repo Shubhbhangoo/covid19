@@ -1,4 +1,4 @@
-streamlit==1.6.0
-Pillow==8.4.0
-tensorflow==2.7.0
-numpy==1.21.4
+streamlit==1.15.1  # Adjust version if needed
+opencv-python==4.8.0  # Adjust version if needed
+tensorflow==2.10.0  # Adjust version if needed (assuming TensorFlow backend)
+numpy==1.23.5  # Adjust version if needed
